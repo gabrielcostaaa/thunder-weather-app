@@ -1,0 +1,21 @@
+:root {
+  --amarelo-primary: #FFE066;
+  --azul-secondary: #2B2D42;
+  --dark: #1C1C22;
+  --white: #EDF2F4;
+  --cinza-placeholder: #8D99AE;
+  --fonte-principal: "Inter", sans-serif;
+  --fonte-secundaria: "Archivo", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--fonte-principal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
