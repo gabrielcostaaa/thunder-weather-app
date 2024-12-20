@@ -13,31 +13,40 @@ import {
   Navbar
 } from "../../components";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
-import { FormInputTiposEndereco } from "../../types/index"
+import { useState, useEffect } from "react";
+import { FormInputTipos, WeatherData } from "../../types/index"
+import { apiViaCep } from "../../services/viaCepService";
+import { apiWeatherStack } from "../../services/WeatherStackService";
+import { postData } from "../../services/ThunderService";
 
-const CadastroEndereco = () => {
+const Clima = () => {
 
-  const [city, setCity] = useState<string>("");
-  const [clime, setClime] = useState<string>("");
-  const [isDay, setIsDay] = useState<string>();
-  const [temperature, setTemperature] = useState<number>();
-  const [pressure, setPressure] = useState<number>();
-  const [humidity, setHumidity] = useState<number>();
-  const [feelslike, setFeelslike] = useState<number>();
-  const [windSpeed, setWindSpeed] = useState<number>();
-  const [precip, setPrecip] = useState<number>();
-  const [uv, setUv] = useState<number>();
-  const [cloudcover, setCloudcover] = useState<number>();
+  const [weatherData, setWeatherData] = useState<WeatherData>({
+    city: '',
+    time: '',
+    clime: '',
+    isDay: false,
+    temperature: 0,
+    pressure: 0,
+    humidity: 0,
+    feelslike: 0,
+    windSpeed: 0,
+    precip: 0,
+    uv: 0,
+    cloudcover: 0,
+  });
 
-
-  const {register, handleSubmit, formState: {errors}, setError, setValue, watch } = useForm<FormInputTiposEndereco>({
+  const {register, handleSubmit, formState: { errors, isSubmitSuccessful }, setError, setValue, watch, reset} = useForm<FormInputTipos>({
     mode:"all",
     defaultValues:{
       cep: "",
       localidade: "",
     }
   })
+
+  useEffect(() => {
+    reset()
+  }, [isSubmitSuccessful])
 
   const cepDigitado = watch("cep")
 
@@ -47,52 +56,52 @@ const CadastroEndereco = () => {
         type: "manual",
         message: "CEP inválido",
       })
-
       return
     }
       try {
-        const response = await fetch(`http://viacep.com.br/ws/${cep}/json/`)
-        const data = await response.json()
+        const data = await apiViaCep(cep)
         console.log(data);
 
-        if(response.ok){
+        if(data.localidade && data.uf){
           setValue("localidade", `${data.localidade}, ${data.uf}`)
-        } else {
-          throw new Error("Cep inválido")
         }
+
       } catch (error) {
         console.error(error)
       }
   }
 
-  const aoSubmeter = async (dados: FormInputTiposEndereco) => {
-
-    const localidade = dados.localidade.split(",")[0].trim();
-    const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
-    const url = `https://api.weatherstack.com/current?access_key=${API_KEY}&query=${localidade}`;
-    const options = {
-      method: 'GET'
-    };
+  const aoSubmeter = async (dados: FormInputTipos) => {
 
     try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      const climeWeather = data.current.weather_descriptions; 
-
+      const data = await apiWeatherStack(dados);
 
       console.log(data);
-      setCity(data.location.name);
-      setTemperature(data.current.temperature);
-      setClime(climeWeather);
-      setIsDay(data.current.is_day);
-      setPressure(data.current.pressure);
-      setHumidity(data.current.humidity);
-      setFeelslike(data.current.feelslike);
-      setWindSpeed(data.current.wind_speed);
-      setPrecip(data.current.precip);
-      setUv(data.current.uv_index);
-      setCloudcover(data.current.cloudcover);
 
+      setWeatherData({
+        city: data.location.name,
+        time: data.current.observation_time,
+        clime: data.current.weather_descriptions,
+        isDay: data.current.is_day,
+        temperature: data.current.temperature,
+        pressure: data.current.pressure,
+        humidity: data.current.humidity,
+        feelslike: data.current.feelslike,
+        windSpeed: data.current.wind_speed,
+        precip: data.current.precip,
+        uv: data.current.uv_index,
+        cloudcover: data.current.cloudcover,
+      });
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const Favoritar = async () => {
+    try {
+      const data = await postData('cidades', weatherData);
+      console.log(data);
     } catch (error) {
       console.error(error);
     }
@@ -111,7 +120,11 @@ const CadastroEndereco = () => {
             type="text" 
             $error = {!!errors.cep}
             {...register("cep", {
-              required: "O campo de CEP é obrigatório"
+              required: "O campo de CEP é obrigatório",
+              minLength: {
+                value: 8,
+                message: "O cep deve ter pelo menos 8 números"
+              },
             })}
             onBlur={() => fetchEndereco(cepDigitado)}
             />
@@ -141,15 +154,15 @@ const CadastroEndereco = () => {
           <div style={{ display: "flex", gap: "35px", flexDirection: "column" }}>
           <div style={{display: "flex", gap: "35px"}}>
             <Card 
-            city={city}
-            clime={clime}
-            temperature={temperature}
-            isDay={isDay}
+            city={weatherData.city}
+            clime={weatherData.clime}
+            temperature={weatherData.temperature}
+            isDay={weatherData.isDay}
             />
             <div style={{ display: "flex", gap: "35px", flexDirection: "column" }}>
-              <Navbar/>
+              <Navbar onFavoritar={Favoritar}/>
               <MiniCard 
-              info={windSpeed}
+              info={weatherData.windSpeed}
               cardType={"Velocidade Vento"}
               />
             </div>
@@ -158,31 +171,31 @@ const CadastroEndereco = () => {
           <div style={{display: "flex", gap: "35px"}}>
           <div style={{ display: "flex", gap: "35px", flexDirection: "column" }}>
             <MiniCard 
-            info={precip}
+            info={weatherData.precip}
             cardType={"Precipitação"}
             />
             <MiniCard 
-            info={pressure}
+            info={weatherData.pressure}
             cardType={"Pressão"}
             />
           </div>
           <div style={{ display: "flex", gap: "35px", flexDirection: "column" }}>
              <MiniCard 
-            info={humidity}
+            info={weatherData.humidity}
             cardType={"Umidade"}
             />
             <MiniCard 
-            info={cloudcover}
+            info={weatherData.cloudcover}
             cardType={"Cobertura de Nuvens"}
             />
           </div>
           <div style={{ display: "flex", gap: "35px", flexDirection: "column" }}>
             <MiniCard 
-            info={feelslike}
+            info={weatherData.feelslike}
             cardType={"Sensação Térmica"}
             />
              <MiniCard 
-            info={uv}
+            info={weatherData.uv}
             cardType={"Índice UV"}
             />
           </div>
@@ -194,4 +207,4 @@ const CadastroEndereco = () => {
   );
 };
 
-export default CadastroEndereco;
+export default Clima;

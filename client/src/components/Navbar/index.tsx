@@ -18,13 +18,16 @@ const NavbarContainer = styled.div`
     left: 0;
 `;
 
-const Navbar = () => {
+const Navbar = (props) => {
   const [save, setSave] = useState<boolean>(false);
 
   return (
     <NavbarContainer>
       <ButtonFavorite
-      onClick={() => setSave(!save)}
+      onClick={() => {
+        props.onFavoritar();
+        setSave(!save);
+      }}
       >
         <Heart 
         size={25}

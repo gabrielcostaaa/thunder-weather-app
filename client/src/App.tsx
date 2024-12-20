@@ -1,4 +1,4 @@
-import Cadastro from "./pages/Cadastro";
+import Cadastro from "./pages/Clima";
 import PaginaBaseFormulario from "./pages/PaginaBaseFormulario";
 
 function App() {

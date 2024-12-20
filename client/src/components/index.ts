@@ -12,4 +12,5 @@ export { default as Logotipo } from "./Logotipo";
 export { default as Sidebar } from "./Sidebar";
 export { default as Card } from "./Card";
 export { default as MiniCard } from "./MiniCard";
+export { default as InputMask } from "./InputMask";
 export { default as Navbar } from "./Navbar";
